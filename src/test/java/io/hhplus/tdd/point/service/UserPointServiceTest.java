@@ -50,6 +50,51 @@ class UserPointServiceTest {
                 .hasMessage("존재하지 않는 id입니다.");
     }
 
+    @Test
+    @DisplayName("포인트를 충전할 수 있다.")
+    void chargePoint(){
+        //given
+        long userId = 1L;
+        long point = 500L;
+        UserPoint userPoint = createUserPoint(userId, point);
+
+        when(userPointRepository.save(userId, point))
+                .thenReturn(userPoint);
+        //when
+        UserPoint savedUserPoint = userPointService.chargePoint(userId,point);
+        //then
+        assertThat(userPoint.id()).isEqualTo(userId);
+        assertThat(userPoint.point()).isEqualTo(point);
+    }
+
+    @Test
+    @DisplayName("포인트를 충전할때 음수가 들어가면 예외가 발생한다..")
+    void chargePointWithMinusPoint(){
+        //given
+        long userId = 1L;
+        long point = -1L;
+
+        //when
+        //then
+        assertThatThrownBy(()->userPointService.chargePoint(userId,point))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("포인트는 양수여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("포인트를 충전할때 0이면 예외가 발생한다..")
+    void chargePointWithZeroPoint(){
+        //given
+        long userId = 1L;
+        long point = 0L;
+
+        //when
+        //then
+        assertThatThrownBy(()->userPointService.chargePoint(userId,point))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("포인트는 양수여야 합니다.");
+    }
+
     private UserPoint createUserPoint(long id, long point) {
         return UserPoint.builder()
                 .id(id)

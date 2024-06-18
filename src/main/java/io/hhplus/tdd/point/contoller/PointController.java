@@ -2,6 +2,7 @@ package io.hhplus.tdd.point.contoller;
 
 import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.UserPoint;
+import io.hhplus.tdd.point.dto.request.PointChargeRequest;
 import io.hhplus.tdd.point.service.UserPointService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -47,9 +48,10 @@ public class PointController {
     @PatchMapping("{id}/charge")
     public UserPoint charge(
             @PathVariable long id,
-            @RequestBody long amount
+            @RequestBody PointChargeRequest request
     ) {
-        return new UserPoint(0, 0, 0);
+        UserPoint userPoint = userPointService.chargePoint(id, request.getAmount());
+        return new UserPoint(userPoint.id(), userPoint.point(), userPoint.updateMillis());
     }
 
     /**
