@@ -11,9 +11,16 @@ public class UserPointService {
 
     private final UserPointRepository userPointRepository;
 
-    public UserPoint getUserPoint(long id){
+    public UserPoint getUserPoint(long id) {
         return userPointRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다."));
+    }
+
+    public UserPoint chargePoint(long id, long amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("포인트는 양수여야 합니다.");
+        }
+        return userPointRepository.save(id, amount);
     }
 
 }
