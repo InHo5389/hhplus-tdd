@@ -19,7 +19,7 @@ public class UserPointRepositoryImpl implements UserPointRepository {
     }
 
     @Override
-    public UserPoint save(UserPoint userPoint) {
-        return userPointTable.insertOrUpdate(userPoint.id(),userPoint.point());
+    public UserPoint save(long id, long amount) {
+        return userPointTable.insertOrUpdate(id,amount);
     }
 }

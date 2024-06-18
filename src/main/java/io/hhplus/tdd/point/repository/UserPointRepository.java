@@ -7,5 +7,5 @@ import java.util.Optional;
 public interface UserPointRepository {
 
     Optional<UserPoint> findById(long id);
-    UserPoint save(UserPoint userPoint);
+    UserPoint save(long id, long amount);
 }

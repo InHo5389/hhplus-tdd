@@ -52,10 +52,9 @@ class PointHistoryRepositoryImplTest {
         //given
         long id = 1L;
         long point = 333L;
-        UserPoint userPoint = createUserPoint(id, point);
         //when
         //then
-        assertThat(userPointRepository.save(userPoint))
+        assertThat(userPointRepository.save(id,point))
                 .extracting("id", "point")
                 .contains(id, point);
     }
@@ -70,7 +69,7 @@ class PointHistoryRepositoryImplTest {
         UserPoint newUserPoint = createUserPoint(newId, newPoint);
         //when
         //then
-        assertThat(userPointRepository.save(newUserPoint))
+        assertThat(userPointRepository.save(newId,newPoint))
                 .extracting("id", "point")
                 .contains(newId, newPoint);
     }

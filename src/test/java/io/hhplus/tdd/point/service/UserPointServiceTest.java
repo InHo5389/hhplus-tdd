@@ -11,9 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserPointServiceTest {
@@ -35,7 +35,7 @@ class UserPointServiceTest {
                 .thenReturn(Optional.of(userPoint));
         //when
         //then
-        assertThat(point).isEqualTo(userPointService.getUserPoint(userId));
+        assertThat(point).isEqualTo(userPointService.getUserPoint(userId).point());
     }
 
     @Test
