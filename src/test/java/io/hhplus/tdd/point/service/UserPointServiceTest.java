@@ -1,6 +1,8 @@
 package io.hhplus.tdd.point.service;
 
+import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
+import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,13 +15,16 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserPointServiceTest {
 
     @Mock
     private UserPointRepository userPointRepository;
+
+    @Mock
+    private PointHistoryRepository pointHistoryRepository;
 
     @InjectMocks
     private UserPointService userPointService;
@@ -116,7 +121,7 @@ class UserPointServiceTest {
 
     @Test
     @DisplayName("생성된 id가 있고 포인트가 일정금액 이상 있으면 포인트를 사용할수 있다.")
-    void usePoint(){
+    void usePoint() {
         //given
         long userId = 1L;
         long point = 1000L;
@@ -126,8 +131,8 @@ class UserPointServiceTest {
         when(userPointRepository.findById(userId))
                 .thenReturn(Optional.of(userPoint));
 
-        when(userPointRepository.save(userId,usePoint))
-                .thenReturn(new UserPoint(userId,point - usePoint,System.currentTimeMillis()));
+        when(userPointRepository.save(userId, usePoint))
+                .thenReturn(new UserPoint(userId, point - usePoint, System.currentTimeMillis()));
         //when
         UserPoint usedUserPoint = userPointService.usePoint(userId, usePoint);
         //then
@@ -136,7 +141,7 @@ class UserPointServiceTest {
 
     @Test
     @DisplayName("포인트를 사용할 때 포인트가 부족하면 예외가 발생한다.")
-    void usePointNotEnoughPoint(){
+    void usePointNotEnoughPoint() {
         //given
         long userId = 1L;
         long point = 100L;
@@ -148,14 +153,14 @@ class UserPointServiceTest {
 
         //when
         //then
-        assertThatThrownBy(()->userPointService.usePoint(userId, usePoint))
+        assertThatThrownBy(() -> userPointService.usePoint(userId, usePoint))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("포인트가 부족합니다.");
     }
 
     @Test
     @DisplayName("포인트를 사용할 때 생성된 id가 없으면 예외를 발생한다.")
-    void usePointNonExistingUserId(){
+    void usePointNonExistingUserId() {
         //given
         long userId = 1L;
         long usePoint = 500L;
@@ -165,9 +170,47 @@ class UserPointServiceTest {
 
         //when
         //then
-        assertThatThrownBy(()->userPointService.usePoint(userId, usePoint))
+        assertThatThrownBy(() -> userPointService.usePoint(userId, usePoint))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("생성된 유저 id가 없습니다.");
+    }
+
+    @Test
+    @DisplayName("포인트를 충전할 때 PointHistoryTable에 충전 내역을 저장한다.")
+    void chargePointSavePointHistory() {
+        //given
+        long userId = 1L;
+        long point = 500L;
+        UserPoint userPoint = createUserPoint(userId, point);
+
+        long chargePoint = 50L;
+        when(userPointRepository.findById(userId))
+                .thenReturn(Optional.of(userPoint));
+        when(userPointRepository.save(userId, userPoint.point() + chargePoint))
+                .thenReturn(new UserPoint(userId, chargePoint + point, System.currentTimeMillis()));
+        //when
+        UserPoint savedUserPoint = userPointService.chargePoint(userId, chargePoint);
+        //then
+        verify(pointHistoryRepository, times(1)).save(userId, savedUserPoint.point(), TransactionType.CHARGE, savedUserPoint.updateMillis());
+    }
+
+    @Test
+    @DisplayName("포인트를 사용할 때 PointHistoryTable에 사용 내역을 저장한다.")
+    void usePointSavePointHistory() {
+        //given
+        long userId = 1L;
+        long point = 500L;
+        UserPoint userPoint = createUserPoint(userId, point);
+
+        long usePoint = 50L;
+        when(userPointRepository.findById(userId))
+                .thenReturn(Optional.of(userPoint));
+        when(userPointRepository.save(userId, userPoint.point() - usePoint))
+                .thenReturn(new UserPoint(userId, userPoint.point() - usePoint, System.currentTimeMillis()));
+        //when
+        UserPoint savedUserPoint = userPointService.usePoint(userId, usePoint);
+        //then
+        verify(pointHistoryRepository, times(1)).save(userId, savedUserPoint.point(), TransactionType.USE, savedUserPoint.updateMillis());
     }
 
     private UserPoint createUserPoint(long id, long point) {
