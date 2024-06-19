@@ -20,7 +20,9 @@ public class UserPointService {
         if (amount <= 0) {
             throw new IllegalArgumentException("포인트는 양수여야 합니다.");
         }
-        return userPointRepository.save(id, amount);
+        UserPoint userPoint = userPointRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("생성된 유저 id가 없습니다."));
+        return userPointRepository.save(id, userPoint.point() + amount);
     }
 
 }
