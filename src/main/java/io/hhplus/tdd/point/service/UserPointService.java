@@ -1,11 +1,14 @@
 package io.hhplus.tdd.point.service;
 
+import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -45,5 +48,9 @@ public class UserPointService {
         UserPoint savedUserPoint = userPointRepository.save(id, userPoint.point() - amount);
         pointHistoryRepository.save(savedUserPoint.id(), savedUserPoint.point(), TransactionType.USE, savedUserPoint.updateMillis());
         return savedUserPoint;
+    }
+
+    public List<PointHistory> getHistory(long id) {
+        return pointHistoryRepository.findAllByUserId(id);
     }
 }

@@ -1,9 +1,11 @@
 package io.hhplus.tdd.point.service;
 
+import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -213,10 +216,63 @@ class UserPointServiceTest {
         verify(pointHistoryRepository, times(1)).save(userId, savedUserPoint.point(), TransactionType.USE, savedUserPoint.updateMillis());
     }
 
+    @Test
+    @DisplayName("point history table을 조회한다.")
+    void getHistory(){
+        //given
+
+        long userId = 1L;
+        long updateMillis = System.currentTimeMillis();
+        PointHistory pointHistory1 = createPointHistory(1L, userId, 50L, TransactionType.CHARGE, updateMillis);
+        PointHistory pointHistory2 = createPointHistory(2L, userId, 150L, TransactionType.USE, updateMillis);
+        PointHistory pointHistory3 = createPointHistory(3L, userId, 500L, TransactionType.CHARGE, updateMillis);
+        List<PointHistory> pointHistoryList = List.of(pointHistory1, pointHistory2, pointHistory3);
+
+        when(pointHistoryRepository.findAllByUserId(userId))
+                .thenReturn(pointHistoryList);
+        //when
+        List<PointHistory> history = userPointService.getHistory(userId);
+        //then
+        assertThat(history).hasSize(3)
+                .extracting("id","userId","amount","type","updateMillis")
+                .containsExactlyInAnyOrder(
+                        Tuple.tuple(1L,1L,50L,TransactionType.CHARGE,updateMillis),
+                        Tuple.tuple(2L,1L,150L,TransactionType.USE,updateMillis),
+                        Tuple.tuple(3L,1L,500L,TransactionType.CHARGE,updateMillis)
+                );
+    }
+
+    @Test
+    @DisplayName("point history table을 조회할때 비어있으면 빈 LIST를 반환한다.")
+    void getHistoryEmptyList(){
+        //given
+
+        long userId = 1L;
+        long updateMillis = System.currentTimeMillis();
+        List<PointHistory> pointHistoryList = List.of();
+
+        when(pointHistoryRepository.findAllByUserId(userId))
+                .thenReturn(pointHistoryList);
+        //when
+        List<PointHistory> history = userPointService.getHistory(userId);
+        //then
+        assertThat(history).isEmpty();
+    }
+
     private UserPoint createUserPoint(long id, long point) {
         return UserPoint.builder()
                 .id(id)
                 .point(point)
+                .build();
+    }
+
+    private PointHistory createPointHistory(long id, long userId,long amount,TransactionType type,long updateMillis){
+        return PointHistory.builder()
+                .id(id)
+                .userId(userId)
+                .amount(amount)
+                .type(type)
+                .updateMillis(updateMillis)
                 .build();
     }
 }
