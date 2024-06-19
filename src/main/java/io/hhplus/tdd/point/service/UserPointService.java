@@ -25,4 +25,17 @@ public class UserPointService {
         return userPointRepository.save(id, userPoint.point() + amount);
     }
 
+    public UserPoint usePoint(long id, long amount) {
+        UserPoint userPoint = userPointRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("생성된 유저 id가 없습니다."));
+
+        if (userPoint.point() < amount) {
+            throw new RuntimeException("포인트가 부족합니다.");
+        }
+
+        if (amount < 0) {
+            throw new RuntimeException("사용 금액은 0보다 커야합니다.");
+        }
+        return userPointRepository.save(id, userPoint.point() - amount);
+    }
 }

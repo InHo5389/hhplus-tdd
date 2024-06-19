@@ -114,6 +114,62 @@ class UserPointServiceTest {
                 .hasMessage("생성된 유저 id가 없습니다.");
     }
 
+    @Test
+    @DisplayName("생성된 id가 있고 포인트가 일정금액 이상 있으면 포인트를 사용할수 있다.")
+    void usePoint(){
+        //given
+        long userId = 1L;
+        long point = 1000L;
+        long usePoint = 500L;
+        UserPoint userPoint = createUserPoint(userId, point);
+
+        when(userPointRepository.findById(userId))
+                .thenReturn(Optional.of(userPoint));
+
+        when(userPointRepository.save(userId,usePoint))
+                .thenReturn(new UserPoint(userId,point - usePoint,System.currentTimeMillis()));
+        //when
+        UserPoint usedUserPoint = userPointService.usePoint(userId, usePoint);
+        //then
+        assertThat(usedUserPoint.point()).isEqualTo(point - usePoint);
+    }
+
+    @Test
+    @DisplayName("포인트를 사용할 때 포인트가 부족하면 예외가 발생한다.")
+    void usePointNotEnoughPoint(){
+        //given
+        long userId = 1L;
+        long point = 100L;
+        long usePoint = 500L;
+        UserPoint userPoint = createUserPoint(userId, point);
+
+        when(userPointRepository.findById(userId))
+                .thenReturn(Optional.of(userPoint));
+
+        //when
+        //then
+        assertThatThrownBy(()->userPointService.usePoint(userId, usePoint))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("포인트가 부족합니다.");
+    }
+
+    @Test
+    @DisplayName("포인트를 사용할 때 생성된 id가 없으면 예외를 발생한다.")
+    void usePointNonExistingUserId(){
+        //given
+        long userId = 1L;
+        long usePoint = 500L;
+
+        when(userPointRepository.findById(userId))
+                .thenReturn(Optional.empty());
+
+        //when
+        //then
+        assertThatThrownBy(()->userPointService.usePoint(userId, usePoint))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("생성된 유저 id가 없습니다.");
+    }
+
     private UserPoint createUserPoint(long id, long point) {
         return UserPoint.builder()
                 .id(id)

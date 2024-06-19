@@ -62,6 +62,9 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return new UserPoint(0, 0, 0);
+        if (amount <= 0 ){
+            throw new IllegalArgumentException("포인트는 양수 값으로만 사용할 수 있습니다.");
+        }
+        return userPointService.usePoint(id,amount);
     }
 }
