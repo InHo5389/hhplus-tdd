@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class PointHistoryRepositoryImpl implements PointHistoryRepository{
+public class PointHistoryRepositoryImpl implements PointHistoryRepository {
 
     private final PointHistoryTable pointHistoryTable;
 
@@ -21,6 +21,11 @@ public class PointHistoryRepositoryImpl implements PointHistoryRepository{
 
     @Override
     public PointHistory save(long userId, long amount, TransactionType type, long updateMillis) {
-        return pointHistoryTable.insert(userId,amount,type,updateMillis);
+        return pointHistoryTable.insert(userId, amount, type, updateMillis);
+    }
+
+    @Override
+    public void clear() {
+        pointHistoryTable.clear();
     }
 }

@@ -7,12 +7,16 @@ import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.groups.Tuple;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +32,12 @@ class UserPointServiceIntegrateTest {
 
     @Autowired
     private UserPointService userPointService;
+
+    @AfterEach
+    void tearDown(){
+        pointHistoryRepository.clear();
+        userPointRepository.clear();
+    }
 
     @Test
     @DisplayName("포인트가 저장되어 있을때 조회가 가능하다.")
@@ -47,11 +57,11 @@ class UserPointServiceIntegrateTest {
     void getUserPoint1() {
         //given
         long id = 1L;
-        long point = 0;
+        long point = 0L;
         //when
         UserPoint getUserPoint = userPointService.getUserPoint(id);
         //then
-        assertThat(getUserPoint).isEqualTo(point);
+        assertThat(getUserPoint.point()).isEqualTo(point);
     }
 
     @Test
@@ -135,6 +145,66 @@ class UserPointServiceIntegrateTest {
                 .containsExactlyInAnyOrder(
                         Tuple.tuple(1L,TransactionType.USE,880L,useUserPoint.updateMillis())
                 );
+    }
+
+    @Test
+    @DisplayName("포인트를 충전할때 동시에 요청을 하면 값이 제대로 나와야 한다.")
+    void chargePointWithConcurrency() throws InterruptedException {
+        //given
+        long userId  = 1L;
+        long point = 5L;
+
+        int threadCount = 100;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(()->{
+                try {
+                    userPointService.chargePoint(userId,point);
+                }finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        //when
+        UserPoint userPoint = userPointRepository.findById(userId).get();
+        //then
+        assertThat(userPoint.point()).isEqualTo(500);
+    }
+
+    @Test
+    @DisplayName("포인트를 사용할때 동시에 요청을 하면 값이 제대로 나와야 한다.")
+    void usePointWithConcurrency() throws InterruptedException {
+        //given
+        long userId  = 1L;
+        long point = 5000L;
+
+        long usePoint = 5L;
+        int threadCount = 100;
+
+        userPointRepository.save(userId,point);
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(()->{
+                try {
+                    userPointService.usePoint(userId,usePoint);
+                }finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        //when
+        UserPoint userPoint = userPointRepository.findById(userId).get();
+        //then
+        assertThat(userPoint.point()).isEqualTo(4500L);
     }
 
     private UserPoint createUserPoint(long id, long point) {

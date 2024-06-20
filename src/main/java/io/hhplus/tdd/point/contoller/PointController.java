@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RestController
 @RequestMapping("/point")
@@ -19,6 +21,8 @@ public class PointController {
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
 
     private final UserPointService userPointService;
+
+    private final Queue<PointChargeRequest> chargeRequests = new ConcurrentLinkedQueue<>();
 
     /**
      * TODO - 특정 유저의 포인트를 조회하는 기능을 작성해주세요.
@@ -62,9 +66,9 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        if (amount <= 0 ){
+        if (amount <= 0) {
             throw new IllegalArgumentException("포인트는 양수 값으로만 사용할 수 있습니다.");
         }
-        return userPointService.usePoint(id,amount);
+        return userPointService.usePoint(id, amount);
     }
 }
